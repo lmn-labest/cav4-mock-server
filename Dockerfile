@@ -1,4 +1,4 @@
-FROM python:3.13-slim-bookworm
+FROM python:3.12-slim-bullseye
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 ENV UV_COMPILE_BYTECODE=1
@@ -12,6 +12,6 @@ RUN uv sync --locked --no-install-project --no-dev
 
 COPY app.py ./
 
-CMD ["uv", "run", "fastapi", "dev", "--port", "9000", "--host", "0.0.0.0"]
+CMD ["uv", "run", "fastapi", "run", "--port", "9000"]
 
 EXPOSE 9000
