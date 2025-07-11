@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Form
+from fastapi import FastAPI, HTTPException, Form, Request
 from fastapi.responses import RedirectResponse
 import uuid
 import jwt
@@ -13,13 +13,24 @@ SECRET_KEY = "mysecretkey"
 # Rota de autorização
 @app.get("/oauth2/authorize")
 async def authorize(
+    request: Request,
     response_type: str,
     redirect_uri: str,
     scope: str
 ):
+    referer = request.headers.get("referer")
+
+    if referer:
+        if referer == redirect_uri:
+            uri_to_use = redirect_uri
+        else:
+            uri_to_use = referer
+    else:
+        uri_to_use = redirect_uri
+
     code = str(uuid.uuid4())
     codes_storage[code] = {
-        "redirect_uri": redirect_uri,
+        "redirect_uri": uri_to_use,
         "scope": scope
     }
     return RedirectResponse(f"{redirect_uri}?code={code}")
@@ -43,9 +54,9 @@ async def token(
 
     # Criar JWT
     payload = {
-        "user_login": "AAAA",
-        "given_name": "Fernando",
-        "email": "fernando@example.com",
+        "user_login": "BBBB",
+        "given_name": "Henrique",
+        "email": "henrique@example.com",
         "department": "LACEO",
         "exp": datetime.utcnow() + timedelta(seconds=3600)
     }
