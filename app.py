@@ -65,7 +65,7 @@ async def authorize(
         "scope": scope
     }
 
-    return RedirectResponse(f"/oauth2/login?code={code}&redirect_uri={redirect_uri}")
+    return RedirectResponse(f"/oauth2/login?code={code}&redirect_uri={uri_to_use}")
 
 # Rota de token
 @app.post("/oauth2/token")
