@@ -5,6 +5,7 @@ ENV UV_COMPILE_BYTECODE=1
 
 WORKDIR /app
 
+COPY templates ./templates/
 COPY pyproject.toml ./
 COPY uv.lock ./
 
