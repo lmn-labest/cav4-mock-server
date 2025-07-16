@@ -38,7 +38,12 @@ users = {
         "given_name": "Manoel",
         "email": "manoel@example.com",
         "department": "LABEST",
-    }
+    }, 
+    "FFFF": {
+        "given_name": "Breno",
+        "email": "brenol@example.com",
+        "department": "LACEO",
+    },
 }
 
 # Rota de autorização
