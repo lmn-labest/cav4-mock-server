@@ -38,11 +38,21 @@ users = {
         "given_name": "Manoel",
         "email": "manoel@example.com",
         "department": "LABEST",
-    }, 
+    },
     "FFFF": {
         "given_name": "Breno",
         "email": "brenol@example.com",
         "department": "LACEO",
+    },
+    "GGGG": {
+        "given_name": "Ana",
+        "email": "ana@example.com",
+        "department": "LABEST",
+    },
+    "IIII": {
+        "given_name": "Rodrigo",
+        "email": "rodrigo@example.com",
+        "department": "LABEST",
     },
 }
 
