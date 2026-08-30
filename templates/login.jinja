@@ -19,6 +19,7 @@
           <form class="form-signin" method="post" action="/oauth2/login">
             <input name="code" hidden value={{code}}>
             <input name="redirect_uri" hidden value={{redirect_uri}}>
+            <input name="state" hidden value={{state}}>
             <select name="user_key" class="form-select form-select-lg mb-3 text-center sm" required>
               <option value="">Selecione o usuário:</option>
               {% for k, v in users.items() %}
