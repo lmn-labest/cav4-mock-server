@@ -154,14 +154,14 @@ async def authorize(
     scope: str,
     state: str,
 ):
-    # referer = request.headers.get("referer")
-    # if referer:
-    #     if referer == redirect_uri:
-    #         uri_to_use = redirect_uri
-    #     else:
-    #         uri_to_use = f"{referer}oauth2/login"
-    # else:
-    #     uri_to_use = redirect_uri
+    referer = request.headers.get("referer")
+    if referer:
+        if referer == redirect_uri:
+            uri_to_use = redirect_uri
+        else:
+            uri_to_use = f"{referer}oauth2/login"
+    else:
+        uri_to_use = redirect_uri
     uri_to_use = redirect_uri
 
     code = str(uuid.uuid4())
@@ -170,7 +170,6 @@ async def authorize(
         "scope": scope,
         "state": state,
     }
-    breakpoint()
     return RedirectResponse(f"/oauth2/login?code={code}&redirect_uri={uri_to_use}&state={state}")
 
 # Rota de token
