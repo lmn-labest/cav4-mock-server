@@ -13,85 +13,33 @@ SECRET_KEY = "mysecretkey"
 
 templates = Jinja2Templates(directory="templates")
 
-APPLICATIONS = [
-    {
-        "uid": 1178,
-        "catalogId": "A17790",
-        "creationDate": "2025-04-29T10:49:46Z",
-        "applicationEnvironments": [
-            {
-                "uid": 10024667,
-                "application": {
-                    "catalogId": "A17790"
-                },
-                "environment": {
-                    "uid": 8,
-                    "code": "PRD",
-                    "name": "Produção"
-                },
-                "administratorAuthorized": True,
-                "readOnly": True,
-                "grcEnabled": False,
-                "authorizationProcessExternallyManaged": False,
-                "consoleAuthorized": True,
-                "integratedAuthenticationAllowed": True,
-                "creationDate": "2025-09-02T11:05:31Z",
-                "logSynchronous": False,
-                "usingB2c": False
-            },
-            {
-                "uid": 10024666,
-                "application": {
-                    "catalogId": "A17790"
-                },
-                "environment": {
-                    "uid": 7,
-                    "code": "HMG",
-                    "name": "Homologação"
-                },
-                "administratorAuthorized": True,
-                "readOnly": False,
-                "grcEnabled": False,
-                "authorizationProcessExternallyManaged": False,
-                "consoleAuthorized": True,
-                "integratedAuthenticationAllowed": True,
-                "creationDate": "2025-09-02T11:05:00Z",
-                "logSynchronous": False,
-                "usingB2c": False
-            },
-            {
-                "uid": 10024666,
-                "application": {
-                    "catalogId": "A17790"
-                },
-                "environment": {
-                    "uid": 7,
-                    "code": "TST",
-                    "name": "Teste"
-                },
-                "administratorAuthorized": True,
-                "readOnly": False,
-                "grcEnabled": False,
-                "authorizationProcessExternallyManaged": False,
-                "consoleAuthorized": True,
-                "integratedAuthenticationAllowed": True,
-                "creationDate": "2025-09-02T11:05:00Z",
-                "logSynchronous": False,
-                "usingB2c": False
-            }
-        ],
-        "translations": [
-            {
-                "uid": 21707,
-                "shortName": "CONFIACIM",
-                "name": "CONFIACIM",
-                "description": "Calculadora do risco de vazamento e análise de confiabilidade do cimento. A aplicação executa análises de bainhas de cimento utilizando conceitos de confiabilidade estrutural.",
-                "order": 1,
-                "languageCode": "PT_BR"
-            }
-        ]
-    },
-]
+APPLICATION_ID = "A17790"
+
+
+def user_group(code: str, enabled: bool = True) -> dict:
+    """Grupo do usuário na aplicação: `code` é o papel (`administrador` ou `usuario`)."""
+    return {
+        "uid": 66828,
+        "code": code,
+        "area": {"uid": 190663, "code": APPLICATION_ID},
+        "enabled": enabled,
+    }
+
+
+# Grupos de cada usuário na CA. Fica fora de `users` porque `users` vai inteiro para o id_token.
+user_groups = {
+    "AAAA": [user_group("administrador")],
+    "BBBB": [user_group("administrador")],
+    "CCCC": [user_group("usuario")],
+    "DDDD": [user_group("usuario")],
+    "EEEE": [user_group("usuario")],
+    "FFFF": [user_group("usuario")],
+    "GGGG": [user_group("usuario", enabled=False)],
+    "IIII": [],
+}
+
+# `access_token` emitido em `/oauth2/token` -> chave do usuário.
+access_tokens = {}
 
 
 users = {
@@ -99,49 +47,41 @@ users = {
         "given_name": "Fernando",
         "email": "fernando@example.com",
         "department": "LACEO",
-        "applications": APPLICATIONS,
     },
     "BBBB": {
         "given_name": "Henrique",
         "email": "henrique@example.com",
         "department": "LABEST",
-        "applications": APPLICATIONS,
     },
     "CCCC": {
         "given_name": "Gabriela",
         "email": "gabi@example.com",
         "department": "LACEO",
-        "applications": APPLICATIONS,
     },
     "DDDD": {
         "given_name": "Guilherme",
         "email": "gui@example.com",
         "department": "LACEO",
-        "applications": APPLICATIONS,
     },
     "EEEE": {
         "given_name": "Manoel",
         "email": "manoel@example.com",
         "department": "LABEST",
-        "applications": APPLICATIONS,
     },
     "FFFF": {
         "given_name": "Breno",
         "email": "brenol@example.com",
         "department": "LACEO",
-        "applications": APPLICATIONS,
     },
     "GGGG": {
         "given_name": "Ana",
         "email": "ana@example.com",
         "department": "LABEST",
-        "applications": APPLICATIONS,
     },
     "IIII": {
         "given_name": "Rodrigo",
         "email": "rodrigo@example.com",
         "department": "LABEST",
-        "applications": APPLICATIONS,
     },
 }
 
@@ -193,6 +133,7 @@ async def token(
 
     # Criar JWT
     user_key = codes_storage[code]['user_key']
+    access_tokens[access_token] = user_key
     payload = {
         **users[user_key],
         "user_login": user_key,
@@ -236,6 +177,17 @@ async def login_post(
     return RedirectResponse(f"{redirect_uri}?code={code}&state={state}")
 
 
-@app.get("/api/system/users/{user_key}/applications")
-async def user_applications(user_key: str):
-    return users[user_key]["applications"]
+@app.get("/api/users/current/user-groups")
+async def current_user_groups(request: Request):
+    scheme, _, access_token = request.headers.get("authorization", "").partition(" ")
+
+    if scheme.lower() != "bearer" or access_token not in access_tokens:
+        raise HTTPException(401, "Token inválido")
+
+    content = user_groups[access_tokens[access_token]]
+
+    return {
+        "content": content,
+        "pageable": {"size": 100, "number": 0, "sort": {}, "mode": "OFFSET"},
+        "totalSize": len(content),
+    }
