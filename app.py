@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Form, Request
 from fastapi.responses import RedirectResponse
 import uuid
 import jwt
+from cryptography.hazmat.primitives.asymmetric import rsa
 from datetime import datetime, timedelta
 from fastapi.templating import Jinja2Templates
 
@@ -9,7 +10,12 @@ app = FastAPI()
 
 # Armazenamento em memória
 codes_storage = {}
-SECRET_KEY = "mysecretkey"
+
+# Como a CA de verdade, assina o id_token com RS256 e publica a chave publica em
+# `/oauth2/jwks`. A chave nasce a cada subida do servidor: depois de reiniciar, os
+# id_tokens antigos deixam de valer e e preciso logar de novo.
+SIGNING_KEY_ID = "cav4-mock-key"
+SIGNING_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
 templates = Jinja2Templates(directory="templates")
 
@@ -137,9 +143,10 @@ async def token(
     payload = {
         **users[user_key],
         "user_login": user_key,
+        "aud": client_id,
         "exp": datetime.utcnow() + timedelta(seconds=3600)
     }
-    id_token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+    id_token = jwt.encode(payload, SIGNING_KEY, algorithm="RS256", headers={"kid": SIGNING_KEY_ID})
 
     return {
         "access_token": access_token,
@@ -149,6 +156,13 @@ async def token(
         "expires_in": 3600,
         "id_token": id_token
     }
+
+
+@app.get("/oauth2/jwks")
+async def jwks():
+    # Mesmo formato da JWKS da CA: so `kty`, `e`, `kid` e `n`, sem `alg`.
+    public_jwk = jwt.algorithms.RSAAlgorithm.to_jwk(SIGNING_KEY.public_key(), as_dict=True)
+    return {"keys": [{"kty": "RSA", "e": public_jwk["e"], "kid": SIGNING_KEY_ID, "n": public_jwk["n"]}]}
 
 
 @app.get("/oauth2/login")
